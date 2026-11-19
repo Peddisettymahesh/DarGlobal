@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Property Assistant</title>
+<style>
+:root{--bg:#f6f5f2;--panel:#fff;--ink:#1d1d1b;--muted:#6b6a66;--line:#e4e2dc;--accent:#8a6d3b;--accent-ink:#fff;--user:#1d1d1b;--user-ink:#fff;--code:#f0eee9}
+@media (prefers-color-scheme:dark){:root{--bg:#121211;--panel:#1b1b19;--ink:#ecebe7;--muted:#9a9891;--line:#2c2b28;--accent:#c9a66b;--accent-ink:#121211;--user:#ecebe7;--user-ink:#121211;--code:#262522}}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column}
+header{padding:14px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header .wrap{max-width:860px;margin:0 auto;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{font-size:17px;margin:0;font-weight:650;letter-spacing:-.01em}
+header small{color:var(--muted)}
+#stats{margin-left:auto;color:var(--muted);font-size:12.5px}
+main{flex:1;overflow-y:auto}
+#log{max-width:860px;margin:0 auto;padding:20px 16px 8px}
+.msg{margin:0 0 16px;display:flex}
+.msg.user{justify-content:flex-end}
+.bubble{max-width:min(680px,92%);padding:10px 14px;border-radius:14px;background:var(--panel);border:1px solid var(--line);overflow-wrap:anywhere}
+.user .bubble{background:var(--user);color:var(--user-ink);border-color:transparent}
+.bubble p{margin:.35em 0}.bubble ul,.bubble ol{margin:.35em 0;padding-left:1.3em}
+.bubble a{color:var(--accent)}.bubble code{background:var(--code);padding:1px 4px;border-radius:4px;font-size:.92em}
+.bubble h3,.bubble h4{margin:.6em 0 .3em;font-size:1em}
+.meta{font-size:12px;color:var(--muted);margin-top:8px;border-top:1px dashed var(--line);padding-top:6px}
+.meta a{color:var(--muted)}
+.err{color:#c0392b}
+#intro{text-align:center;color:var(--muted);padding:28px 0 8px}
+#intro h2{color:var(--ink);font-size:20px;margin:0 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:7px 12px;font:inherit;font-size:13.5px;cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+footer{border-top:1px solid var(--line);background:var(--panel);padding:12px 16px}
+form{max-width:860px;margin:0 auto;display:flex;gap:8px}
+textarea{flex:1;resize:none;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:10px 12px;font:inherit;min-height:44px;max-height:160px}
+textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+button.send{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:0 18px;font:inherit;font-weight:600;cursor:pointer}
+button.send:disabled{opacity:.5;cursor:default}
+.note{max-width:860px;margin:6px auto 0;font-size:11.5px;color:var(--muted)}
+.dots::after{content:"…";animation:b 1s infinite}@keyframes b{50%{opacity:.2}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>DarGlobal &amp; Wasalt Property Assistant</h1><small>AI chat over publicly scraped data</small><span id="stats"></span></div></header>
+<main id="scroller"><div id="log">
+  <div id="intro">
+    <h2>Ask about DarGlobal projects or Wasalt listings</h2>
+    <div>Answers come from DarGlobal's and Wasalt's public sitemaps, run through a free model on OpenRouter.</div>
+    <div class="chips">
+      <button class="chip">Which countries does DarGlobal have projects in?</button>
+      <button class="chip">Which luxury brands has DarGlobal partnered with?</button>
+      <button class="chip">Tell me about Trump Tower Jeddah</button>
+      <button class="chip">How many 3 bedroom apartments for rent are listed on Wasalt?</button>
+      <button class="chip">Villas for sale over 400 sqm facing north</button>
+      <button class="chip">Which Jeddah districts have daily rental chalets?</button>
+    </div>
+  </div>
+</div></main>
+<footer>
+  <form id="f"><textarea id="q" rows="1" placeholder="Ask a question…" autofocus></textarea><button class="send" id="send">Send</button></form>
+  <div class="note">Data covers page titles and listing attributes from URLs only. Prices and descriptions aren't included. Check details on the source sites.</div>
+</footer>
+<script>
+const log=document.getElementById('log'),q=document.getElementById('q'),f=document.getElementById('f'),send=document.getElementById('send'),scroller=document.getElementById('scroller');
+const history=[];
+fetch('/health').then(r=>r.json()).then(h=>{const r=h.records;document.getElementById('stats').textContent=`${r.darglobal_pages} DarGlobal pages · ${r.wasalt_listings.toLocaleString()} Wasalt listings · ${(r.wasalt_area_pages+r.wasalt_daily_rentals).toLocaleString()} more Wasalt pages`}).catch(()=>{});
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function inline(s){return esc(s).replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,'$1<a href="$2" target="_blank" rel="noopener">$2</a>')}
+function md(t){const out=[];let list=null;for(const raw of t.split('\n')){const l=raw.trimEnd();let m;
+ if(m=l.match(/^\s*[-*•]\s+(.*)/)){if(list!=='ul'){close();out.push('<ul>');list='ul'}out.push('<li>'+inline(m[1])+'</li>');continue}
+ if(m=l.match(/^\s*\d+[.)]\s+(.*)/)){if(list!=='ol'){close();out.push('<ol>');list='ol'}out.push('<li>'+inline(m[1])+'</li>');continue}
+ close();if(m=l.match(/^#{1,4}\s+(.*)/)){out.push('<h4>'+inline(m[1])+'</h4>');continue}
+ if(l.trim())out.push('<p>'+inline(l)+'</p>')}
+ close();return out.join('');function close(){if(list){out.push(`</${list}>`);list=null}}}
+function add(role,html){const d=document.createElement('div');d.className='msg '+role;d.innerHTML=`<div class="bubble">${html}</div>`;log.appendChild(d);scroller.scrollTop=scroller.scrollHeight;return d.querySelector('.bubble')}
+async function ask(text){
+ document.getElementById('intro')?.remove();add('user',esc(text));const b=add('bot','<span class="dots">Thinking</span>');
+ send.disabled=true;let answer='',sources=[],model='',err='';
+ try{const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history})});
+  if(!r.ok){err=(await r.json().catch(()=>({}))).detail||('HTTP '+r.status)}else{
+  const rd=r.body.getReader(),dec=new TextDecoder();let buf='';
+  while(true){const {done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});let i;
+   while((i=buf.indexOf('\n\n'))>=0){const ev=buf.slice(0,i);buf=buf.slice(i+2);let type='message',data='';
+    for(const line of ev.split('\n')){if(line.startsWith('event: '))type=line.slice(7);else if(line.startsWith('data: '))data+=line.slice(6)}
+    if(!data)continue;const v=JSON.parse(data);
+    if(type==='sources')sources=v;else if(type==='model')model=v;else if(type==='error')err=v;else if(type==='message'){answer+=v;b.innerHTML=md(answer);scroller.scrollTop=scroller.scrollHeight}}}}
+ }catch(e){err=String(e)}
+ let html=md(answer||'');if(err)html+=`<p class="err">${esc(err)}</p>`;
+ if(sources.length)html+=`<div class="meta">Sources: ${sources.slice(0,6).map((s,i)=>`<a href="${esc(s)}" target="_blank" rel="noopener">[${i+1}] ${esc(s.replace(/^https?:\/\/(www\.)?/,'').slice(0,60))}</a>`).join(' · ')}${model?` · model: ${esc(model)}`:''}</div>`;
+ b.innerHTML=html||'<p class="err">No response.</p>';
+ if(answer){history.push({role:'user',content:text},{role:'assistant',content:answer.slice(0,3000)})}
+ send.disabled=false;q.focus()}
+f.addEventListener('submit',e=>{e.preventDefault();const t=q.value.trim();if(!t||send.disabled)return;q.value='';q.style.height='';ask(t)});
+q.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();f.requestSubmit()}});
+q.addEventListener('input',()=>{q.style.height='auto';q.style.height=Math.min(q.scrollHeight,160)+'px'});
+document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>ask(c.textContent));
+</script>
+</body>
+</html>

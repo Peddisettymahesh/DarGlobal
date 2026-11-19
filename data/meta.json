@@ -1,0 +1,11 @@
+{
+ "scraped_at": "2026-11-19T15:17:48Z",
+ "sources": {
+  "darglobal": "https://darglobal.co.uk/sitemap.xml",
+  "listings": "https://cdn.wasalt.sa/sitemap/product_sitemap_en_sa.xml.gz",
+  "categories": "https://cdn.wasalt.sa/sitemap/category_sitemap_en_sa.xml.gz",
+  "daily_rentals": "https://cdn.wasalt.sa/sitemap/rental_pdp_sitemap_en_sa.xml.gz",
+  "daily_rental_areas": "https://cdn.wasalt.sa/sitemap/rental_srp_sitemap_en_sa.xml.gz",
+  "static": "https://cdn.wasalt.sa/sitemap/static_sitemap_en_sa.xml.gz"
+ }
+}
